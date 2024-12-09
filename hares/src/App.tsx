@@ -13,20 +13,16 @@ function App() {
   useEffect(() => {
     if (!threeRef.current) return;
 
-    // Create the scene
     const scene = new THREE.Scene();
 
-    // Set up the camera
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.z = 5;
 
-    // Set up the renderer
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     threeRef.current.appendChild(renderer.domElement);
 
-    // Handle window resize
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -38,69 +34,77 @@ function App() {
     // Load the font
     const loader = new FontLoader();
     loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font: Font) => {
-      // Create text geometry for 'A'
       const textGeometryA = new TextGeometry('A', {
         font: font,
         size: 1,
         height: 0.2,
       });
 
-      // Alphabet Material
-      const alphabetMaterial = new THREE.MeshStandardMaterial({
-        color: 0x00ff00,
-        roughness: 0.5,
-        metalness: 0.5,
+      const alphabetMaterial = new THREE.MeshPhongMaterial({
+        color: 0xFFDEAD, 
+        specular: 0x555555,
+        shininess: 30,
       });
       const textMeshA = new THREE.Mesh(textGeometryA, alphabetMaterial);
-      textMeshA.position.x = -2; // Position on the left side
+      textMeshA.position.x = -2; //left 
       scene.add(textMeshA);
 
-      // Create text geometry for '0'
       const textGeometry0 = new TextGeometry('0', {
         font: font,
         size: 1,
         height: 0.1,
       });
 
-      // Digit Material
+      //metal
       const digitMaterial = new THREE.MeshStandardMaterial({
-        color: 0x0000ff,
-        roughness: 0.5,
-        metalness: 0.5,
+        color: 0x002152, 
+        metalness: 0.5, 
+        roughness: 0.2, 
       });
       const textMesh0 = new THREE.Mesh(textGeometry0, digitMaterial);
-      textMesh0.position.x = 1; // Position closer to the cube
+      textMesh0.position.x = 1;
       scene.add(textMesh0);
 
-      // Create a glowing cube at the center with red emissive color
-      const cubeGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5); // Smaller cube
+      // glowing cube
+      const cubeGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5); 
       const cubeMaterial = new THREE.MeshStandardMaterial({
-        color: 0xff0000,
-        emissive: 0xff0000, // Red emissive color
-        emissiveIntensity: 5, // Increase emissive intensity
+        color: 0xffffff,
+        emissive: 0xffffff, 
+        emissiveIntensity: 5, 
       });
       const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
       scene.add(cube);
 
-      // Add a point light at the cube's position with white color
-      const pointLight = new THREE.PointLight(0xffffff, 10, 500); // Increase distance and change color to white
+      const wireframeGeometry = new THREE.WireframeGeometry(cubeGeometry);
+      const wireframeMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+      const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
+      cube.add(wireframe);
+
+      const pointLight = new THREE.PointLight(0xffffff, 20, 500); 
       pointLight.position.copy(cube.position);
       scene.add(pointLight);
 
-      // Set up post-processing for bloom effect
+      const digitLight = new THREE.PointLight(0xffffff, 10, 100);
+      digitLight.position.set(1, 0, 5); 
+      scene.add(digitLight);
+
+      // add ambient to scene
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.470);
+      scene.add(ambientLight);
+
       const composer = new EffectComposer(renderer);
       const renderPass = new RenderPass(scene, camera);
       composer.addPass(renderPass);
 
       const bloomPass = new UnrealBloomPass(
         new THREE.Vector2(window.innerWidth, window.innerHeight),
-        2.0, // Increase strength
-        0.4, // Radius
-        0.85 // Threshold
+        2.0, 
+        0.4, 
+        0.85 
       );
       composer.addPass(bloomPass);
 
-      // Handle keydown events for interactivity
+      //movement
       const handleKeyDown = (event: KeyboardEvent) => {
         switch (event.key) {
           case 'w':
@@ -116,19 +120,18 @@ function App() {
             camera.position.x -= 0.1;
             break;
         }
-        // Update light position
+        //update light
         pointLight.position.copy(cube.position);
       };
       window.addEventListener('keydown', handleKeyDown);
 
-      // Render the scene
+      // render
       const animate = () => {
         requestAnimationFrame(animate);
         composer.render();
       };
       animate();
 
-      // Clean up on component unmount
       return () => {
         window.removeEventListener('resize', handleResize);
         window.removeEventListener('keydown', handleKeyDown);
